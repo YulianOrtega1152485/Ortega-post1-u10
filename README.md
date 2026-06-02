@@ -31,3 +31,30 @@ Se consultó la jerarquía de caché del procesador mediante los archivos del si
 - L3: 24576K
 
 ![Checkpoint 1](capturas/checkpoint1.png)
+
+## Checkpoint 2: Benchmark secuencial
+
+Se ejecutó un benchmark de acceso secuencial a arreglos de distintos tamaños para medir la latencia promedio por byte.
+
+### Resultados
+
+| Tamaño (KB) | ns/byte |
+|------------ |---------:|
+| 4           | 0.946 |
+| 8           | 0.973 |
+| 16          | 0.873 |
+| 32          | 0.889 |
+| 64          | 0.886 |
+| 128         | 0.524 |
+| 256         | 0.486 |
+| 512         | 0.464 |
+| 1024        | 0.474 |
+| 4096        | 0.476 |
+| 16384       | 0.479 |
+| 65536       | 0.472 |
+
+### Análisis
+
+Los tiempos obtenidos permanecen relativamente estables debido a la eficiencia de los mecanismos de caché y prefetch del procesador moderno. Aunque no se observan transiciones abruptas, el experimento permite apreciar el efecto de la jerarquía de memoria durante accesos secuenciales.
+
+![Checkpoint 2](capturas/checkpoint2.png)
