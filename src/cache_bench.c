@@ -5,12 +5,10 @@
 
 #define REPEAT 100
 
-/* Medir tiempo de acceso secuencial a array de N bytes */
 double bench_seq(size_t n_bytes) {
     volatile char *arr = (volatile char *)malloc(n_bytes);
 
-    if (!arr)
-        return -1.0;
+    if (!arr) return -1.0;
 
     memset((void *)arr, 1, n_bytes);
 
@@ -35,37 +33,90 @@ double bench_seq(size_t n_bytes) {
     return ns / (REPEAT * (double)n_bytes);
 }
 
+/* Acceso aleatorio */
+double bench_rand(size_t n_bytes) {
+
+    size_t n = n_bytes / sizeof(int);
+
+    int *arr = (int *)malloc(n * sizeof(int));
+    size_t *idx = (size_t *)malloc(n * sizeof(size_t));
+
+    if (!arr || !idx)
+        return -1.0;
+
+    for (size_t i = 0; i < n; i++) {
+        arr[i] = i;
+        idx[i] = i;
+    }
+
+    /* Fisher-Yates */
+    for (size_t i = n - 1; i > 0; i--) {
+        size_t j = rand() % (i + 1);
+
+        size_t tmp = idx[i];
+        idx[i] = idx[j];
+        idx[j] = tmp;
+    }
+
+    struct timespec t0, t1;
+
+    clock_gettime(CLOCK_MONOTONIC, &t0);
+
+    volatile long sum = 0;
+
+    for (int r = 0; r < REPEAT; r++) {
+        for (size_t i = 0; i < n; i++) {
+            sum += arr[idx[i]];
+        }
+    }
+
+    clock_gettime(CLOCK_MONOTONIC, &t1);
+
+    free(arr);
+    free(idx);
+
+    double ns =
+        (t1.tv_sec - t0.tv_sec) * 1e9 +
+        (t1.tv_nsec - t0.tv_nsec);
+
+    return ns / (REPEAT * (double)n);
+}
+
 int main(void) {
 
     size_t sizes[] = {
-        4 * 1024,
-        8 * 1024,
-        16 * 1024,
-        32 * 1024,        /* Región L1 */
-
-        64 * 1024,
-        128 * 1024,
-        256 * 1024,       /* Región L2 */
-
-        512 * 1024,
-        1024 * 1024,
-        4 * 1024 * 1024,  /* Región L3 */
-
-        16 * 1024 * 1024,
-        64 * 1024 * 1024  /* RAM */
+        4*1024,
+        8*1024,
+        16*1024,
+        32*1024,
+        64*1024,
+        128*1024,
+        256*1024,
+        512*1024,
+        1024*1024,
+        4*1024*1024,
+        16*1024*1024,
+        64*1024*1024
     };
 
-    int n = sizeof(sizes) / sizeof(sizes[0]);
+    int n = sizeof(sizes)/sizeof(sizes[0]);
 
-    printf("%-12s %12s\n", "Array(KB)", "ns/byte");
-    printf("--------------------------------\n");
+    printf("%-12s %-12s %-12s\n",
+           "Array(KB)",
+           "Seq(ns)",
+           "Rand(ns)");
+
+    printf("-------------------------------------------------\n");
 
     for (int i = 0; i < n; i++) {
-        double lat = bench_seq(sizes[i]);
 
-        printf("%-12zu %12.3f\n",
+        double seq = bench_seq(sizes[i]);
+        double rnd = bench_rand(sizes[i]);
+
+        printf("%-12zu %-12.3f %-12.3f\n",
                sizes[i] / 1024,
-               lat);
+               seq,
+               rnd);
     }
 
     return 0;
